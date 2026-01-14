@@ -1,0 +1,66 @@
+# Example app-config.yaml snippets for Claim Machinery integration
+
+# =============================================================================
+# PROXY CONFIGURATION
+# =============================================================================
+# Add this to your app-config.yaml proxy section
+proxy:
+  endpoints:
+    '/claim-machinery':
+      # Update this to your Claim Machinery API URL
+      target: 'http://sthings-backstage.tiab.labda.sva.de:8080'
+      changeOrigin: true
+      pathRewrite:
+        '^/api/proxy/claim-machinery': ''
+      # Allow access without authentication
+      allowedHeaders: ['*']
+      credentials: 'dangerously-allow-unauthenticated'
+
+# =============================================================================
+# CATALOG LOCATIONS
+# =============================================================================
+# Add these to your catalog.locations section
+catalog:
+  locations:
+    # Simple test template - displays rendered manifest
+    - type: file
+      target: ../../test-templates/claim-template.yaml
+      rules:
+        - allow: [Template]
+
+    # Production template - creates GitLab merge request
+    - type: file
+      target: ../../test-templates/claim-to-merge-request.yaml
+      rules:
+        - allow: [Template]
+
+# =============================================================================
+# BACKEND CONFIGURATION
+# =============================================================================
+backend:
+  baseUrl: ${BACKEND_URL}
+  listen:
+    port: 7007
+    host: 0.0.0.0
+  cors:
+    origin: ${BASE_URL}
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+
+# =============================================================================
+# GITLAB INTEGRATION (Required for merge request templates)
+# =============================================================================
+integrations:
+  gitlab:
+    - host: codehub.sva.de
+      apiBaseUrl: https://codehub.sva.de/api/v4
+      token: ${GITLAB_TOKEN}
+
+# =============================================================================
+# ENVIRONMENT VARIABLES
+# =============================================================================
+# Add these to your .env file:
+#
+# BASE_URL=http://your-backstage-instance:3000
+# BACKEND_URL=http://your-backstage-instance:7007
+# GITLAB_TOKEN=your-gitlab-token

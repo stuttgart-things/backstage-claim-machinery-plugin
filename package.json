@@ -1,0 +1,51 @@
+{
+  "name": "backstage-claim-machinery-plugin",
+  "version": "1.0.0",
+  "description": "Backstage plugin for integrating Claim Machinery API with custom scaffolder field extensions and actions",
+  "keywords": [
+    "backstage",
+    "backstage-plugin",
+    "scaffolder",
+    "claim-machinery",
+    "crossplane",
+    "kubernetes",
+    "gitlab"
+  ],
+  "author": "Stuttgart Things",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stuttgart-things/backstage-claim-machinery-plugin"
+  },
+  "bugs": {
+    "url": "https://github.com/stuttgart-things/backstage-claim-machinery-plugin/issues"
+  },
+  "homepage": "https://github.com/stuttgart-things/backstage-claim-machinery-plugin#readme",
+  "scripts": {
+    "install-to": "node scripts/install.js"
+  },
+  "peerDependencies": {
+    "@backstage/plugin-scaffolder-node": "^0.4.0",
+    "@backstage/plugin-scaffolder-react": "^1.19.0",
+    "@backstage/core-plugin-api": "^1.9.0",
+    "@backstage/types": "^1.1.0",
+    "@material-ui/core": "^4.12.0",
+    "react": "^17.0.2 || ^18.0.0",
+    "fs-extra": "^11.0.0",
+    "node-fetch": "^2.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "backstage": {
+    "role": "common"
+  },
+  "files": [
+    "backend/",
+    "frontend/",
+    "templates/",
+    "docs/",
+    "README.md",
+    "QUICKSTART.md"
+  ]
+}
