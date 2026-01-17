@@ -9,7 +9,8 @@ backstage-claim-machinery-plugin/
 ├── backend/
 │   └── scaffolder-claim-machinery/
 │       ├── action.ts                    # Custom scaffolder action
-│       └── index.ts                     # Action export
+│       ├── index.ts                     # Module export
+│       └── module.ts                    # Backend module for new backend system
 ├── frontend/
 │   └── ClaimMachineryPicker/
 │       ├── ClaimMachineryPickerExtension.tsx        # Template dropdown
@@ -59,13 +60,44 @@ backstage-claim-machinery-plugin/
 
 ---
 
+### `backend/scaffolder-claim-machinery/module.ts`
+
+**Purpose**: Backend module for the new Backstage backend system
+
+**Content**:
+```typescript
+import { createBackendModule } from '@backstage/backend-plugin-api';
+import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node';
+import { claimMachineryRenderAction } from './action';
+
+export default createBackendModule({
+  pluginId: 'scaffolder',
+  moduleId: 'claim-machinery',
+
+  register(env) {
+    env.registerInit({
+      deps: {
+        scaffolderActions: scaffolderActionsExtensionPoint,
+      },
+      async init({ scaffolderActions }) {
+        scaffolderActions.addActions(
+          claimMachineryRenderAction(),
+        );
+      },
+    });
+  },
+});
+```
+
+---
+
 ### `backend/scaffolder-claim-machinery/index.ts`
 
 **Purpose**: Export barrel file
 
 **Content**:
 ```typescript
-export { claimMachineryRenderAction } from './action';
+export { default } from './module';
 ```
 
 ## Frontend Files
@@ -134,13 +166,31 @@ parameters:
 
 ### `frontend/ClaimMachineryPicker/index.ts`
 
-**Purpose**: Export barrel file
+**Purpose**: Export field extensions using `scaffolderPlugin.provide()`
 
-**Content**:
+**Content** (to be created in target Backstage app):
 ```typescript
-export { ClaimMachineryPickerExtension } from './ClaimMachineryPickerExtension';
-export { ClaimMachineryParametersExtension } from './ClaimMachineryParametersExtension';
+import { scaffolderPlugin } from '@backstage/plugin-scaffolder';
+import { createScaffolderFieldExtension } from '@backstage/plugin-scaffolder-react';
+import { ClaimMachineryPickerExtension } from './ClaimMachineryPickerExtension';
+import { ClaimMachineryParametersExtension } from './ClaimMachineryParametersExtension';
+
+export const ClaimMachineryPickerFieldExtension = scaffolderPlugin.provide(
+  createScaffolderFieldExtension({
+    name: 'ClaimMachineryPicker',
+    component: ClaimMachineryPickerExtension,
+  }),
+);
+
+export const ClaimMachineryParametersFieldExtension = scaffolderPlugin.provide(
+  createScaffolderFieldExtension({
+    name: 'ClaimMachineryParameters',
+    component: ClaimMachineryParametersExtension,
+  }),
+);
 ```
+
+**Note**: This file needs to be created during installation as it uses `scaffolderPlugin.provide()` to properly register the field extensions with Backstage.
 
 ## Template Files
 

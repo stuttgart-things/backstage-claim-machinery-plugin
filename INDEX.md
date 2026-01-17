@@ -55,15 +55,15 @@ templates/
 ## 🎯 Quick Navigation
 
 ### Installation Tasks
-1. [Copy files](QUICKSTART.md#1%EF%B8%8F⃣-copy-files-2-minutes) → Backend, Frontend, Templates
-2. [Install dependencies](QUICKSTART.md#2%EF%B8%8F⃣-install-dependencies-1-minute) → yarn commands
-3. [Configure API](QUICKSTART.md#3%EF%B8%8F⃣-configure-api-url-1-minute) → Update URLs
-4. [Add proxy](QUICKSTART.md#4%EF%B8%8F⃣-add-proxy-configuration-1-minute) → app-config.yaml
-5. [Register components](QUICKSTART.md#5%EF%B8%8F⃣-register-field-extensions-2-minutes) → apis.ts
-6. [Register action](QUICKSTART.md#6%EF%B8%8F⃣-register-backend-action-2-minutes) → backend setup
-7. [Add to catalog](QUICKSTART.md#7%EF%B8%8F⃣-add-templates-to-catalog-1-minute) → templates
-8. [Set env vars](QUICKSTART.md#8%EF%B8%8F⃣-set-environment-variables-30-seconds) → .env
-9. [Start Backstage](QUICKSTART.md#9%EF%B8%8F⃣-start-backstage-30-seconds) → yarn dev
+1. [Copy files](QUICKSTART.md#1-copy-files) → Backend, Frontend, Templates
+2. [Install dependencies](QUICKSTART.md#2-install-dependencies) → yarn commands
+3. [Register backend action](QUICKSTART.md#3-register-backend-action) → index.ts
+4. [Create frontend index](QUICKSTART.md#4-create-frontend-field-extension-index) → index.ts with scaffolderPlugin.provide()
+5. [Register frontend extensions](QUICKSTART.md#5-register-frontend-field-extensions) → App.tsx
+6. [Add proxy](QUICKSTART.md#6-add-proxy-configuration) → app-config.yaml
+7. [Add to catalog](QUICKSTART.md#7-add-templates-to-catalog) → templates
+8. [Configure API URL](QUICKSTART.md#8-configure-api-url-optional) → action.ts (optional)
+9. [Start Backstage](QUICKSTART.md#9-start-backstage) → yarn dev
 
 ### Troubleshooting
 - [Empty dropdown?](README.md#dropdown-is-empty) → Check API URL and proxy
@@ -71,9 +71,9 @@ templates/
 - [Action fails?](README.md#socket-hang-up-errors) → Check API connectivity
 
 ### Configuration
-- [API URL](QUICKSTART.md#3%EF%B8%8F⃣-configure-api-url-1-minute) → action.ts line 35
+- [API URL](QUICKSTART.md#8-configure-api-url-optional) → action.ts line ~23
 - [Proxy config](docs/app-config.example.yaml) → app-config.yaml
-- [Environment vars](docs/app-config.example.yaml) → .env file
+- [Environment vars](docs/app-config.example.yaml) → CLAIM_MACHINERY_API_URL
 - [GitLab repo](README.md#change-target-repository) → templates
 
 ## 📦 File Sizes

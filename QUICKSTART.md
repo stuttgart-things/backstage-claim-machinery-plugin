@@ -1,21 +1,21 @@
 # Quick Start Guide
 
-Get the Claim Machinery integration running in your Backstage instance in 5 minutes.
+Get the Claim Machinery integration running in your Backstage instance in under 15 minutes.
 
 ## Prerequisites
 
-✅ Backstage instance running
-✅ Claim Machinery API accessible
-✅ GitLab integration configured (optional, for merge request features)
+- Backstage instance running (with new backend system)
+- Claim Machinery API accessible
+- GitLab integration configured (optional, for merge request features)
 
 ## Installation Steps
 
-### 1️⃣ Copy Files (2 minutes)
+### 1. Copy Files
 
 ```bash
 # Set your Backstage directory
 BACKSTAGE_DIR="/path/to/your/backstage"
-PLUGIN_DIR="/home/sthings/projects/backstage-claim-machinery-plugin"
+PLUGIN_DIR="/path/to/backstage-claim-machinery-plugin"
 
 # Copy backend plugin
 cp -r $PLUGIN_DIR/backend/scaffolder-claim-machinery \
@@ -31,23 +31,87 @@ mkdir -p $BACKSTAGE_DIR/test-templates
 cp $PLUGIN_DIR/templates/*.yaml $BACKSTAGE_DIR/test-templates/
 ```
 
-### 2️⃣ Install Dependencies (1 minute)
+### 2. Install Dependencies
 
 ```bash
+# Frontend
 cd $BACKSTAGE_DIR/packages/app
 yarn add @backstage/plugin-scaffolder-react
+
+# Backend
+cd $BACKSTAGE_DIR/packages/backend
+yarn add fs-extra node-fetch@2
+yarn add -D @types/fs-extra @types/node-fetch
 ```
 
-### 3️⃣ Configure API URL (1 minute)
+### 3. Register Backend Action
 
-Edit `packages/backend/src/plugins/scaffolder-claim-machinery/action.ts`:
+Edit `packages/backend/src/index.ts` and add:
 
 ```typescript
-// Line 35: Update this URL
-const baseUrl = 'http://YOUR-CLAIM-MACHINERY-API:8080';
+// After other scaffolder imports
+backend.add(import('./plugins/scaffolder-claim-machinery/module'));
 ```
 
-### 4️⃣ Add Proxy Configuration (1 minute)
+Full example:
+```typescript
+// scaffolder plugin
+backend.add(import('@backstage/plugin-scaffolder-backend'));
+backend.add(import('@backstage/plugin-scaffolder-backend-module-github'));
+
+// claim-machinery custom scaffolder action
+backend.add(import('./plugins/scaffolder-claim-machinery/module'));
+```
+
+### 4. Create Frontend Field Extension Index
+
+Create `packages/app/src/scaffolder/ClaimMachineryPicker/index.ts`:
+
+```typescript
+import { scaffolderPlugin } from '@backstage/plugin-scaffolder';
+import { createScaffolderFieldExtension } from '@backstage/plugin-scaffolder-react';
+import { ClaimMachineryPickerExtension } from './ClaimMachineryPickerExtension';
+import { ClaimMachineryParametersExtension } from './ClaimMachineryParametersExtension';
+
+export const ClaimMachineryPickerFieldExtension = scaffolderPlugin.provide(
+  createScaffolderFieldExtension({
+    name: 'ClaimMachineryPicker',
+    component: ClaimMachineryPickerExtension,
+  }),
+);
+
+export const ClaimMachineryParametersFieldExtension = scaffolderPlugin.provide(
+  createScaffolderFieldExtension({
+    name: 'ClaimMachineryParameters',
+    component: ClaimMachineryParametersExtension,
+  }),
+);
+```
+
+### 5. Register Frontend Field Extensions
+
+Edit `packages/app/src/App.tsx`:
+
+Add imports at the top:
+```typescript
+import { ScaffolderPage, scaffolderPlugin, ScaffolderFieldExtensions } from '@backstage/plugin-scaffolder';
+import {
+  ClaimMachineryPickerFieldExtension,
+  ClaimMachineryParametersFieldExtension,
+} from './scaffolder/ClaimMachineryPicker';
+```
+
+Update the scaffolder route (find the `/create` route):
+```typescript
+<Route path="/create" element={<ScaffolderPage />}>
+  <ScaffolderFieldExtensions>
+    <ClaimMachineryPickerFieldExtension />
+    <ClaimMachineryParametersFieldExtension />
+  </ScaffolderFieldExtensions>
+</Route>
+```
+
+### 6. Add Proxy Configuration
 
 Add to `app-config.yaml`:
 
@@ -55,7 +119,7 @@ Add to `app-config.yaml`:
 proxy:
   endpoints:
     '/claim-machinery':
-      target: 'http://YOUR-CLAIM-MACHINERY-API:8080'
+      target: ${CLAIM_MACHINERY_API_URL:-http://YOUR-CLAIM-MACHINERY-API:8080}
       changeOrigin: true
       pathRewrite:
         '^/api/proxy/claim-machinery': ''
@@ -63,104 +127,7 @@ proxy:
       credentials: 'dangerously-allow-unauthenticated'
 ```
 
-### 5️⃣ Register Field Extensions (2 minutes)
-
-Edit `packages/app/src/apis.ts`:
-
-```typescript
-import { formFieldsApiRef } from '@backstage/plugin-scaffolder-react/alpha';
-import { ClaimMachineryPickerExtension } from './scaffolder/ClaimMachineryPicker/ClaimMachineryPickerExtension';
-import { ClaimMachineryParametersExtension } from './scaffolder/ClaimMachineryPicker/ClaimMachineryParametersExtension';
-
-export const apis: AnyApiFactory[] = [
-  // ... existing apis ...
-
-  // Add this at the end:
-  createApiFactory({
-    api: formFieldsApiRef,
-    deps: {},
-    factory: () => ({
-      getFormFields: async () => [
-        {
-          component: ClaimMachineryPickerExtension,
-          name: 'ClaimMachineryPicker',
-        },
-        {
-          component: ClaimMachineryParametersExtension,
-          name: 'ClaimMachineryParameters',
-        },
-      ],
-    }),
-  }),
-];
-```
-
-### 6️⃣ Register Backend Action (2 minutes)
-
-**Option A: New Backend System**
-
-Edit `packages/backend/src/index.ts`:
-
-```typescript
-import { createBackend } from '@backstage/backend-defaults';
-import { claimMachineryRenderAction } from './plugins/scaffolder-claim-machinery/action';
-
-const backend = createBackend();
-
-// ... other plugins ...
-
-backend.add(import('@backstage/plugin-scaffolder-backend/alpha'));
-
-// Register the action
-import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node/alpha';
-
-backend.add(
-  createBackendModule({
-    pluginId: 'scaffolder',
-    moduleId: 'claim-machinery',
-    register(reg) {
-      reg.registerInit({
-        deps: {
-          scaffolder: scaffolderActionsExtensionPoint,
-        },
-        async init({ scaffolder }) {
-          scaffolder.addActions(claimMachineryRenderAction());
-        },
-      });
-    },
-  })(),
-);
-
-backend.start();
-```
-
-**Option B: Legacy Backend System**
-
-Edit `packages/backend/src/plugins/scaffolder.ts`:
-
-```typescript
-import { claimMachineryRenderAction } from './scaffolder-claim-machinery/action';
-
-export default async function createPlugin(
-  env: PluginEnvironment,
-): Promise<Router> {
-  return await createRouter({
-    logger: env.logger,
-    config: env.config,
-    database: env.database,
-    reader: env.reader,
-    catalogClient,
-    identity: env.identity,
-    permissions: env.permissions,
-    actions: [
-      ...builtInActions,
-      claimMachineryRenderAction(),  // Add this line
-    ],
-  });
-}
-```
-
-### 7️⃣ Add Templates to Catalog (1 minute)
+### 7. Add Templates to Catalog
 
 Add to `app-config.yaml`:
 
@@ -179,23 +146,22 @@ catalog:
         - allow: [Template]
 ```
 
-### 8️⃣ Set Environment Variables (30 seconds)
+### 8. Configure API URL (Optional)
 
-Edit `.env` file:
+Edit `packages/backend/src/plugins/scaffolder-claim-machinery/action.ts` line ~23:
 
-```bash
-BASE_URL=http://your-backstage:3000
-BACKEND_URL=http://your-backstage:7007
+```typescript
+const baseUrl = 'http://YOUR-CLAIM-MACHINERY-API:8080';
 ```
 
-### 9️⃣ Start Backstage (30 seconds)
+### 9. Start Backstage
 
 ```bash
 cd $BACKSTAGE_DIR
 yarn dev
 ```
 
-## ✅ Verify Installation
+## Verify Installation
 
 1. Navigate to **Create** in Backstage
 2. Look for these templates:
@@ -205,7 +171,7 @@ yarn dev
    - Claim Template dropdown is populated
    - Parameters form appears when you select a template
 
-## 🎉 You're Done!
+## You're Done!
 
 Try creating a claim:
 1. Select "Create Claim via Merge Request"
@@ -214,7 +180,7 @@ Try creating a claim:
 4. Click "Review" and "Create"
 5. Check the merge request link in the output!
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 **Dropdown is empty?**
 - Check API URL in `action.ts`
@@ -223,7 +189,8 @@ Try creating a claim:
 
 **Field extensions not showing?**
 - Verify `@backstage/plugin-scaffolder-react` is installed
-- Check field extensions are registered in `apis.ts`
+- Check field extensions are registered in `App.tsx` inside `<ScaffolderFieldExtensions>`
+- Make sure you created the `index.ts` file with `scaffolderPlugin.provide()`
 - Restart Backstage
 
 **Backend action fails?**
@@ -231,14 +198,14 @@ Try creating a claim:
 - Verify API endpoint is correct
 - Test API manually: `curl -X POST http://YOUR-API:8080/api/v1/claim-templates/TEMPLATE-NAME/order`
 
-## 📚 Next Steps
+## Next Steps
 
 - Read [README.md](README.md) for detailed documentation
 - Customize templates for your use case
 - Add more scaffolder actions
 - Integrate with your CI/CD pipeline
 
-## 💡 Tips
+## Tips
 
 - Use `claim-to-merge-request.yaml` for production workflows
 - Customize the GitLab repository URL in templates

@@ -1,1 +1,1 @@
-export { scaffolderClaimMachineryModule as default, scaffolderClaimMachineryModule } from './module';
+export { default } from './module';

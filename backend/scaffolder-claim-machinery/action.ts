@@ -2,32 +2,20 @@ import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
 import fs from 'fs-extra';
 import fetch from 'node-fetch';
 import path from 'path';
-import { JsonObject } from '@backstage/types';
 
-export const claimMachineryRenderAction = createTemplateAction<{
-  template: string;
-  parameters?: JsonObject;
-  outputPath?: string;
-}>({
+export const claimMachineryRenderAction = () => createTemplateAction({
   id: 'claim-machinery:render',
   description: 'Render a Claim Machinery template into workspace files',
 
   schema: {
     input: {
-      type: 'object',
-      required: ['template'],
-      properties: {
-        template: { type: 'string' },
-        parameters: { type: 'object', default: {} },
-        outputPath: { type: 'string', default: '.' },
-      },
+      template: z => z.string().describe('The name of the Claim Machinery template'),
+      parameters: z => z.record(z.any()).optional().describe('Template parameters'),
+      outputPath: z => z.string().optional().default('.').describe('Output path for the rendered file'),
     },
     output: {
-      type: 'object',
-      properties: {
-        manifest: { type: 'string' },
-        filePath: { type: 'string' },
-      },
+      manifest: z => z.string().describe('The rendered manifest content'),
+      filePath: z => z.string().describe('The path to the rendered file'),
     },
   },
 
