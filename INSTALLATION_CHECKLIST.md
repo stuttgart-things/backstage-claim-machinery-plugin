@@ -4,7 +4,7 @@ Use this checklist to ensure you've completed all installation steps.
 
 ## Pre-Installation
 
-- [ ] Backstage instance is running
+- [ ] Backstage instance is running (new backend system)
 - [ ] You have access to modify Backstage configuration
 - [ ] Claim Machinery API is accessible
 - [ ] You know your Claim Machinery API URL
@@ -15,20 +15,26 @@ Use this checklist to ensure you've completed all installation steps.
 
 - [ ] Copied `backend/scaffolder-claim-machinery/` to `packages/backend/src/plugins/`
 - [ ] Copied `frontend/ClaimMachineryPicker/` to `packages/app/src/scaffolder/`
-- [ ] Copied template files to a templates directory
+- [ ] Copied template files to a templates directory (e.g., `test-templates/`)
 
 ## Dependencies
 
-- [ ] Installed `@backstage/plugin-scaffolder-react` in `packages/app`
+- [ ] Installed frontend dependencies:
   ```bash
   cd packages/app && yarn add @backstage/plugin-scaffolder-react
+  ```
+
+- [ ] Installed backend dependencies:
+  ```bash
+  cd packages/backend && yarn add fs-extra node-fetch@2
+  yarn add -D @types/fs-extra @types/node-fetch
   ```
 
 ## Configuration Files
 
 ### Backend Action Configuration
-- [ ] Updated API URL in `packages/backend/src/plugins/scaffolder-claim-machinery/action.ts` (line 35)
-  - Changed: `http://YOUR-API:8080` → `http://your-actual-api:8080`
+- [ ] Updated API URL in `packages/backend/src/plugins/scaffolder-claim-machinery/action.ts` (line ~23)
+  - Changed: `http://YOUR-API:8080` to `http://your-actual-api:8080`
 
 ### app-config.yaml
 - [ ] Added proxy configuration:
@@ -36,7 +42,7 @@ Use this checklist to ensure you've completed all installation steps.
   proxy:
     endpoints:
       '/claim-machinery':
-        target: 'http://your-api:8080'
+        target: ${CLAIM_MACHINERY_API_URL:-http://your-api:8080}
         changeOrigin: true
         pathRewrite:
           '^/api/proxy/claim-machinery': ''
@@ -49,105 +55,83 @@ Use this checklist to ensure you've completed all installation steps.
   catalog:
     locations:
       - type: file
-        target: ../../path/to/claim-template.yaml
+        target: ../../test-templates/claim-template.yaml
         rules:
           - allow: [Template]
       - type: file
-        target: ../../path/to/claim-to-merge-request.yaml
+        target: ../../test-templates/claim-to-merge-request.yaml
         rules:
           - allow: [Template]
   ```
 
-### .env File
-- [ ] Added environment variables:
-  ```
-  BASE_URL=http://your-backstage:3000
-  BACKEND_URL=http://your-backstage:7007
-  ```
-
-- [ ] (Optional) Added GitLab token:
-  ```
-  GITLAB_TOKEN=your-gitlab-token
-  ```
+### Environment Variables (Optional)
+- [ ] Set `CLAIM_MACHINERY_API_URL` if using environment variable for proxy target
+- [ ] (Optional) Set `GITLAB_TOKEN` for merge request functionality
 
 ## Code Integration
 
-### Frontend (packages/app/src/apis.ts)
-- [ ] Imported field extensions:
+### Backend (packages/backend/src/index.ts)
+
+- [ ] Added the claim-machinery module import:
   ```typescript
-  import { formFieldsApiRef } from '@backstage/plugin-scaffolder-react/alpha';
-  import { ClaimMachineryPickerExtension } from './scaffolder/ClaimMachineryPicker/ClaimMachineryPickerExtension';
-  import { ClaimMachineryParametersExtension } from './scaffolder/ClaimMachineryPicker/ClaimMachineryParametersExtension';
+  // scaffolder plugin
+  backend.add(import('@backstage/plugin-scaffolder-backend'));
+  backend.add(import('@backstage/plugin-scaffolder-backend-module-github'));
+
+  // claim-machinery custom scaffolder action
+  backend.add(import('./plugins/scaffolder-claim-machinery/module'));
   ```
 
-- [ ] Registered field extensions in `apis` array:
+### Frontend Field Extension Index
+
+- [ ] Created `packages/app/src/scaffolder/ClaimMachineryPicker/index.ts`:
   ```typescript
-  createApiFactory({
-    api: formFieldsApiRef,
-    deps: {},
-    factory: () => ({
-      getFormFields: async () => [
-        {
-          component: ClaimMachineryPickerExtension,
-          name: 'ClaimMachineryPicker',
-        },
-        {
-          component: ClaimMachineryParametersExtension,
-          name: 'ClaimMachineryParameters',
-        },
-      ],
+  import { scaffolderPlugin } from '@backstage/plugin-scaffolder';
+  import { createScaffolderFieldExtension } from '@backstage/plugin-scaffolder-react';
+  import { ClaimMachineryPickerExtension } from './ClaimMachineryPickerExtension';
+  import { ClaimMachineryParametersExtension } from './ClaimMachineryParametersExtension';
+
+  export const ClaimMachineryPickerFieldExtension = scaffolderPlugin.provide(
+    createScaffolderFieldExtension({
+      name: 'ClaimMachineryPicker',
+      component: ClaimMachineryPickerExtension,
     }),
-  }),
-  ```
+  );
 
-### Backend
-
-**For New Backend System (packages/backend/src/index.ts):**
-- [ ] Imported action:
-  ```typescript
-  import { claimMachineryRenderAction } from './plugins/scaffolder-claim-machinery/action';
-  ```
-
-- [ ] Registered action with scaffolder:
-  ```typescript
-  backend.add(
-    createBackendModule({
-      pluginId: 'scaffolder',
-      moduleId: 'claim-machinery',
-      register(reg) {
-        reg.registerInit({
-          deps: {
-            scaffolder: scaffolderActionsExtensionPoint,
-          },
-          async init({ scaffolder }) {
-            scaffolder.addActions(claimMachineryRenderAction());
-          },
-        });
-      },
-    })(),
+  export const ClaimMachineryParametersFieldExtension = scaffolderPlugin.provide(
+    createScaffolderFieldExtension({
+      name: 'ClaimMachineryParameters',
+      component: ClaimMachineryParametersExtension,
+    }),
   );
   ```
 
-**For Legacy Backend System (packages/backend/src/plugins/scaffolder.ts):**
-- [ ] Imported action:
+### Frontend App.tsx (packages/app/src/App.tsx)
+
+- [ ] Added imports:
   ```typescript
-  import { claimMachineryRenderAction } from './scaffolder-claim-machinery/action';
+  import { ScaffolderPage, scaffolderPlugin, ScaffolderFieldExtensions } from '@backstage/plugin-scaffolder';
+  import {
+    ClaimMachineryPickerFieldExtension,
+    ClaimMachineryParametersFieldExtension,
+  } from './scaffolder/ClaimMachineryPicker';
   ```
 
-- [ ] Added to actions array:
+- [ ] Updated the `/create` route:
   ```typescript
-  actions: [
-    ...builtInActions,
-    claimMachineryRenderAction(),
-  ]
+  <Route path="/create" element={<ScaffolderPage />}>
+    <ScaffolderFieldExtensions>
+      <ClaimMachineryPickerFieldExtension />
+      <ClaimMachineryParametersFieldExtension />
+    </ScaffolderFieldExtensions>
+  </Route>
   ```
 
-## Template Customization
+## Template Customization (Optional)
 
 - [ ] Updated GitLab repository URL in templates (if needed):
   - File: `templates/claim-to-merge-request.yaml`
-  - Line: ~77
-  - Change: `codehub.sva.de?owner=Lab/stuttgart-things/idp&repo=resource-engines`
+  - Change: `repoUrl` value to your repository
 
 - [ ] Adjusted target paths (optional)
 - [ ] Customized branch naming (optional)
@@ -219,7 +203,8 @@ If something doesn't work:
 
 ### Field Extensions Not Showing
 - [ ] Verify `@backstage/plugin-scaffolder-react` is installed
-- [ ] Check apis.ts registration
+- [ ] Check that `index.ts` exists with `scaffolderPlugin.provide()` calls
+- [ ] Check App.tsx has `<ScaffolderFieldExtensions>` wrapper
 - [ ] Restart Backstage
 - [ ] Check browser console for errors
 

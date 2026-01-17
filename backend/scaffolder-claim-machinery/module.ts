@@ -1,8 +1,8 @@
 import { createBackendModule } from '@backstage/backend-plugin-api';
-import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node/alpha';
+import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node';
 import { claimMachineryRenderAction } from './action';
 
-export const scaffolderClaimMachineryModule = createBackendModule({
+export default createBackendModule({
   pluginId: 'scaffolder',
   moduleId: 'claim-machinery',
 
@@ -13,7 +13,7 @@ export const scaffolderClaimMachineryModule = createBackendModule({
       },
       async init({ scaffolderActions }) {
         scaffolderActions.addActions(
-          claimMachineryRenderAction,
+          claimMachineryRenderAction(),
         );
       },
     });
