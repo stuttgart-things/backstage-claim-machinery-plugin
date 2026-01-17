@@ -8,6 +8,7 @@ This plugin integrates the Claim Machinery API with Backstage, providing custom 
 - **Backend Action**: Render claim templates via the Claim Machinery API
 - **Template Examples**: Ready-to-use templates for creating merge requests with rendered claims
 - **GitLab Integration**: Automatically create merge requests with rendered manifests
+- **Configurable**: API URL configurable via `app-config.yaml` - no code changes needed
 
 ## Components
 
@@ -90,10 +91,10 @@ backend.add(import('./plugins/scaffolder-claim-machinery/module'));
 backend.start();
 ```
 
-The module (`packages/backend/src/plugins/scaffolder-claim-machinery/module.ts`) looks like:
+The module (`packages/backend/src/plugins/scaffolder-claim-machinery/module.ts`) automatically injects the Backstage config to read the API URL:
 
 ```typescript
-import { createBackendModule } from '@backstage/backend-plugin-api';
+import { createBackendModule, coreServices } from '@backstage/backend-plugin-api';
 import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node';
 import { claimMachineryRenderAction } from './action';
 
@@ -105,10 +106,11 @@ export default createBackendModule({
     env.registerInit({
       deps: {
         scaffolderActions: scaffolderActionsExtensionPoint,
+        config: coreServices.rootConfig,
       },
-      async init({ scaffolderActions }) {
+      async init({ scaffolderActions, config }) {
         scaffolderActions.addActions(
-          claimMachineryRenderAction(),
+          claimMachineryRenderAction({ config }),
         );
       },
     });
@@ -160,11 +162,16 @@ import {
 </Route>
 ```
 
-### Step 5: Configure Backend Proxy
+### Step 5: Configure Claim Machinery API URL
 
-Add the proxy configuration to `app-config.yaml`:
+Add the configuration to `app-config.yaml`:
 
 ```yaml
+# Claim Machinery configuration
+claimMachinery:
+  apiUrl: ${CLAIM_MACHINERY_API_URL:-http://your-claim-machinery-api:8080}
+
+# Proxy for frontend requests
 proxy:
   endpoints:
     '/claim-machinery':
@@ -175,6 +182,19 @@ proxy:
       allowedHeaders: ['*']
       credentials: 'dangerously-allow-unauthenticated'
 ```
+
+The API URL can be configured in two ways:
+
+1. **Environment variable** (recommended for different environments):
+   ```bash
+   export CLAIM_MACHINERY_API_URL=http://your-api:8080
+   ```
+
+2. **Direct in app-config.yaml**:
+   ```yaml
+   claimMachinery:
+     apiUrl: http://your-api:8080
+   ```
 
 ### Step 6: Add Templates to Catalog
 
@@ -196,16 +216,35 @@ catalog:
         - allow: [Template]
 ```
 
-### Step 7: Configure API URL (Optional)
+## Configuration Reference
 
-The backend action has a hardcoded API URL. To change it, edit `packages/backend/src/plugins/scaffolder-claim-machinery/action.ts`:
+### app-config.yaml
 
-```typescript
-// Line ~23: Update this URL
-const baseUrl = 'http://your-claim-machinery-api:8080';
+```yaml
+# Claim Machinery API configuration
+claimMachinery:
+  # The URL of the Claim Machinery API
+  # Used by the backend scaffolder action
+  apiUrl: ${CLAIM_MACHINERY_API_URL:-http://localhost:8080}
+
+# Proxy configuration for frontend requests
+proxy:
+  endpoints:
+    '/claim-machinery':
+      # Should match claimMachinery.apiUrl
+      target: ${CLAIM_MACHINERY_API_URL:-http://localhost:8080}
+      changeOrigin: true
+      pathRewrite:
+        '^/api/proxy/claim-machinery': ''
+      allowedHeaders: ['*']
+      credentials: 'dangerously-allow-unauthenticated'
 ```
 
-Alternatively, set the `CLAIM_MACHINERY_API_URL` environment variable for the proxy.
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CLAIM_MACHINERY_API_URL` | URL of the Claim Machinery API | `http://localhost:8080` |
 
 ## Usage
 
@@ -273,16 +312,6 @@ Complete workflow that:
 
 ## Customization
 
-### Change API Endpoint
-
-Edit `backend/scaffolder-claim-machinery/action.ts`:
-
-```typescript
-const baseUrl = 'http://your-custom-api:8080';
-```
-
-Or use the proxy endpoint with environment variables in `app-config.yaml`.
-
 ### Change Target Repository
 
 Edit the templates to point to your repository:
@@ -322,10 +351,16 @@ This means the frontend is getting HTML instead of JSON:
 
 ### Dropdown is empty
 
-1. Check API URL in `action.ts`
+1. Check `claimMachinery.apiUrl` in `app-config.yaml`
 2. Verify proxy configuration in `app-config.yaml`
 3. Test API manually: `curl http://YOUR-API:8080/api/v1/claim-templates`
 4. Check browser console for errors
+
+### "Gateway Timeout" errors
+
+1. Verify the Claim Machinery API is running
+2. Check the API URL is correct in `app-config.yaml`
+3. Ensure network connectivity between Backstage and the API
 
 ## Architecture
 
@@ -348,9 +383,10 @@ This means the frontend is getting HTML instead of JSON:
 |  +----------------------------------------------------+  |
 |  |  Proxy: /api/proxy/claim-machinery                 |  |
 |  |  Action: claim-machinery:render                    |  |
+|  |  Config: claimMachinery.apiUrl                     |  |
 |  +----------------------------------------------------+  |
 |                        |                                  |
-|                        | HTTP (port 8080)                 |
+|                        | HTTP                              |
 |                        v                                  |
 +----------------------------------------------------------+
                          |
@@ -375,6 +411,9 @@ This means the frontend is getting HTML instead of JSON:
 **Output:**
 - `manifest` (string): The rendered YAML manifest
 - `filePath` (string): The filename of the saved manifest
+
+**Configuration:**
+- Reads API URL from `claimMachinery.apiUrl` in `app-config.yaml`
 
 ### Field Extension: ClaimMachineryPicker
 
