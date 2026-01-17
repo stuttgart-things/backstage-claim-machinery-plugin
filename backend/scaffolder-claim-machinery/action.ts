@@ -20,7 +20,7 @@ export const claimMachineryRenderAction = () => createTemplateAction({
   },
 
   async handler(ctx) {
-    const baseUrl = 'http://sthings-backstage.tiab.labda.sva.de:8080';
+    const baseUrl = 'http://maverick.tiab.labda.sva.de:8080';
 
     ctx.logger.info(`Rendering template: ${ctx.input.template}`);
     ctx.logger.info(`Parameters: ${JSON.stringify(ctx.input.parameters)}`);
