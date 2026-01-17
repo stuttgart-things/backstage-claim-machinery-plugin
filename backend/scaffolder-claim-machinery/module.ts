@@ -1,4 +1,4 @@
-import { createBackendModule } from '@backstage/backend-plugin-api';
+import { createBackendModule, coreServices } from '@backstage/backend-plugin-api';
 import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node';
 import { claimMachineryRenderAction } from './action';
 
@@ -10,10 +10,11 @@ export default createBackendModule({
     env.registerInit({
       deps: {
         scaffolderActions: scaffolderActionsExtensionPoint,
+        config: coreServices.rootConfig,
       },
-      async init({ scaffolderActions }) {
+      async init({ scaffolderActions, config }) {
         scaffolderActions.addActions(
-          claimMachineryRenderAction(),
+          claimMachineryRenderAction({ config }),
         );
       },
     });
