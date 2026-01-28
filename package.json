@@ -25,7 +25,7 @@
     "install-to": "node scripts/install.js"
   },
   "peerDependencies": {
-    "@backstage/plugin-scaffolder-node": "^0.4.0",
+    "@backstage/plugin-scaffolder-node": "^0.4.0 || ^0.12.0",
     "@backstage/plugin-scaffolder-react": "^1.19.0",
     "@backstage/core-plugin-api": "^1.9.0",
     "@backstage/types": "^1.1.0",
