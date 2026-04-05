@@ -1,6 +1,7 @@
 import { createBackendModule, coreServices } from '@backstage/backend-plugin-api';
 import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node';
 import { claimMachineryRenderAction } from './action';
+import { claimMachineryRenderMultipleAction } from './action-render-multiple';
 
 export default createBackendModule({
   pluginId: 'scaffolder',
@@ -15,6 +16,7 @@ export default createBackendModule({
       async init({ scaffolderActions, config }) {
         scaffolderActions.addActions(
           claimMachineryRenderAction({ config }),
+          claimMachineryRenderMultipleAction({ config }),
         );
       },
     });

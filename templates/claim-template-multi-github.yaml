@@ -1,0 +1,89 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: create-multiple-claims-github
+  title: Create Multiple Resource Claims (GitHub)
+  description: Select one or more claim templates, configure parameters for each, and create a GitHub PR with all rendered manifests
+  tags:
+    - claim-machinery
+    - multi-claim
+    - github
+spec:
+  owner: platform-team
+  type: infrastructure
+
+  parameters:
+    - title: Resource Claims
+      description: Add one or more claim templates to provision
+      required:
+        - claims
+      properties:
+        claims:
+          title: Claims
+          type: string
+          description: Select templates and configure parameters for each claim
+          ui:field: ClaimMachineryMultiClaim
+
+    - title: Target Repository
+      description: GitHub repository where the claim manifests will be committed via PR
+      required:
+        - repository
+      properties:
+        repository:
+          title: GitHub Repository
+          type: string
+          description: Target repository in owner/repo format (e.g., stuttgart-things/claims-repo)
+        claimCategory:
+          title: Claim Category
+          type: string
+          description: Category folder under claims/ in the target repository
+          default: infra
+          enum:
+            - infra
+            - apps
+            - network
+        targetBranch:
+          title: Target Branch
+          type: string
+          description: Base branch for the pull request
+          default: main
+
+  steps:
+    - id: render-claims
+      name: Render Claims and Create PR
+      action: claim-machinery:render-multiple
+      input:
+        claims: ${{ parameters.claims }}
+        repository: ${{ parameters.repository }}
+        claimCategory: ${{ parameters.claimCategory }}
+        targetBranch: ${{ parameters.targetBranch }}
+        generateCatalogInfo: true
+        catalogOwner: platform-team
+        generateKustomization: true
+
+    - id: log-summary
+      name: Summary
+      action: debug:log
+      input:
+        message: |
+          Pull request created successfully!
+          PR URL: ${{ steps['render-claims'].output.pullRequestUrl }}
+
+          Combined manifest:
+          ${{ steps['render-claims'].output.manifest }}
+
+  output:
+    links:
+      - title: GitHub Pull Request
+        url: ${{ steps['render-claims'].output.pullRequestUrl }}
+        icon: github
+    text:
+      - title: Pull Request Created
+        content: |
+          A pull request has been created at:
+          ${{ steps['render-claims'].output.pullRequestUrl }}
+      - title: Next Steps
+        content: |
+          1. Review the pull request in GitHub
+          2. Merge the PR to add the claims to the repository
+          3. Claims will be reconciled by the cluster controller after merge
