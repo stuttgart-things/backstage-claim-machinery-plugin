@@ -2,6 +2,7 @@ import { scaffolderPlugin } from '@backstage/plugin-scaffolder';
 import { createScaffolderFieldExtension } from '@backstage/plugin-scaffolder-react';
 import { ClaimMachineryPickerExtension } from './ClaimMachineryPickerExtension';
 import { ClaimMachineryParametersExtension } from './ClaimMachineryParametersExtension';
+import { ClaimMachineryMultiClaimExtension } from './ClaimMachineryMultiClaimExtension';
 
 // Export the field extension components for use with scaffolderPlugin.provide()
 export const ClaimMachineryPickerFieldExtension = scaffolderPlugin.provide(
@@ -18,5 +19,17 @@ export const ClaimMachineryParametersFieldExtension = scaffolderPlugin.provide(
   }),
 );
 
+// Multi-claim field extension (pick multiple templates + parameters)
+export const ClaimMachineryMultiClaimFieldExtension = scaffolderPlugin.provide(
+  createScaffolderFieldExtension({
+    name: 'ClaimMachineryMultiClaim',
+    component: ClaimMachineryMultiClaimExtension,
+  }),
+);
+
 // Also export the raw components if needed
-export { ClaimMachineryPickerExtension, ClaimMachineryParametersExtension };
+export {
+  ClaimMachineryPickerExtension,
+  ClaimMachineryParametersExtension,
+  ClaimMachineryMultiClaimExtension,
+};
