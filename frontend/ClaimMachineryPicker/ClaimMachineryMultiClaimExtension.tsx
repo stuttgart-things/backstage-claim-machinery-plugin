@@ -19,7 +19,8 @@ import {
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
-import React, { useCallback, useEffect, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useApi, configApiRef } from '@backstage/core-plugin-api';
 
 interface TemplateParameter {
@@ -57,6 +58,8 @@ interface ClaimTemplate {
 interface ClaimEntry {
   template: string;
   parameters: Record<string, any>;
+  destPath?: string;
+  destFilename?: string;
 }
 
 /**
@@ -256,10 +259,12 @@ function ClaimRow({
           onUpdate(index, {
             template: entry.template,
             parameters: { ...defaults, ...entry.parameters },
+            destPath: entry.destPath,
+            destFilename: entry.destFilename,
           });
         }
       } catch {
-        // silently fail - user will see empty params
+        // silently fail — user will see empty params
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -278,6 +283,8 @@ function ClaimRow({
     onUpdate(index, {
       template: event.target.value as string,
       parameters: {},
+      destPath: entry.destPath,
+      destFilename: entry.destFilename,
     });
   };
 
@@ -342,6 +349,41 @@ function ClaimRow({
         <Typography variant="body2" color="textSecondary" style={{ marginTop: 8 }}>
           No parameters required for this template
         </Typography>
+      )}
+
+      {entry.template && (
+        <Box marginTop={1}>
+          <Divider style={{ marginBottom: 8 }} />
+          <Typography variant="caption" color="textSecondary">
+            Destination (optional overrides)
+          </Typography>
+          <Box display="flex" style={{ gap: 8 }}>
+            <TextField
+              label="Destination Path"
+              value={entry.destPath ?? ''}
+              onChange={e =>
+                onUpdate(index, { ...entry, destPath: e.target.value || undefined })
+              }
+              helperText="e.g. clusters/prod/manifests"
+              variant="outlined"
+              size="small"
+              fullWidth
+              margin="dense"
+            />
+            <TextField
+              label="Filename"
+              value={entry.destFilename ?? ''}
+              onChange={e =>
+                onUpdate(index, { ...entry, destFilename: e.target.value || undefined })
+              }
+              helperText="e.g. my-vm.yaml"
+              variant="outlined"
+              size="small"
+              fullWidth
+              margin="dense"
+            />
+          </Box>
+        </Box>
       )}
     </Paper>
   );
