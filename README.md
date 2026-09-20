@@ -1,5 +1,17 @@
 # Backstage Claim Machinery Integration
 
+> [!IMPORTANT]
+> **Dieses Repository ist archiviert. Der gepflegte Code liegt im Monorepo.**
+>
+> | | |
+> |---|---|
+> | Aktueller Code | [`stuttgart-things/sthings-backstage`](https://github.com/stuttgart-things/sthings-backstage) → `packages/backend/src/plugins/scaffolder-claim-machinery` (Frontend: `packages/app/src/scaffolder/ClaimMachinery*Extension.tsx`) |
+> | Warum | Dieses Repo war eine Kopie zum Verteilen und ist seit April 2026 (PR #14) inhaltlich stehen geblieben. Im Monorepo kam danach u.a. der Fix „surface real branch-create error" (sthings-backstage#111) dazu — wer hier installiert, spielt die alte Version über den Fix. |
+> | Künftige Verteilung | Als npm-Package nach GHCR unter `@stuttgart-things/*`, statt Dateien zu kopieren. Siehe [sthings-backstage#120](https://github.com/stuttgart-things/sthings-backstage/issues/120). |
+>
+> Issues und PRs bitte im Monorepo. Der Inhalt unten bleibt als historischer Stand stehen.
+
+
 This plugin integrates the Claim Machinery API with Backstage, providing custom scaffolder field extensions and actions for rendering claim templates.
 
 ## Features
